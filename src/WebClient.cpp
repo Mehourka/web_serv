@@ -11,6 +11,39 @@ WebClient::WebClient(int accepted_connection, HttpHandler* httpHandler, pollfd *
 	_updateTime();
 }
 
+WebClient::WebClient(WebClient const &other)
+	: Socket(other)
+{
+	*this = other;
+}
+
+WebClient::~WebClient() {
+}
+
+void	WebClient::_deleteCGI()
+{
+	if (_cgi)
+	{
+		printMsg(R, "Deleting _cgi 0x%p", _cgi);
+		delete _cgi;
+		_cgi = NULL;
+	}
+}
+
+WebClient& WebClient::operator = (WebClient const &other) {
+	Socket::operator =(other);
+	_pollFd = other._pollFd;
+	_state = other._state;
+	_request = other._request;
+	_response = other._response;
+	_httpHandler = other._httpHandler;
+	_cgi = other._cgi;
+	_writeBuffer = other._writeBuffer;
+	_last_update = other._last_update;
+
+	return *this;
+}
+
 void WebClient::_sendData(char const *data, size_t data_len) {
 	size_t	rtn = 0;
 	size_t	idx = 0;
@@ -24,10 +57,6 @@ void WebClient::_sendData(char const *data, size_t data_len) {
 	}
 }
 
-WebClient::~WebClient() {
-	if (_cgi)
-		delete _cgi;
-}
 
 void WebClient::_processInput()
 {
@@ -62,7 +91,8 @@ void WebClient::_processCGI() {
 
 	if (_cgi->completed())
 	{
-		_response.setContent(_response.getContent() + _cgi->getContent());
+		_response.setContent(_cgi->getContent());
+		_deleteCGI();
 		_state = SENDING_RESPONSE;
 	}
 

@@ -91,7 +91,6 @@ void	WebServer::_acceptConnection(int fd)
 	_fds[_nfds].events = POLLIN;
 	WebClient new_client(new_fd, &_httpHandler, &_fds[_nfds]);
 	_clients_list.push_back(new_client);
-
 	_nfds++;
 }
 
@@ -115,7 +114,6 @@ void	WebServer::_processClients()
 		if (client_it->isComplete() 
 			|| client_it->getTime() > CLIENT_TIMEOUT)
 		{
-			printMsg(R, "Server: Removing Web Client");
 			_removeClient(&(*client_it));
 			return ;
 		}

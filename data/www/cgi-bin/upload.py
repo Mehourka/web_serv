@@ -20,7 +20,7 @@ def upload_file(field_item, upload_dir= os.getenv('UPLOAD_DIR')):
 	with open(file_path, 'wb+') as file:
 		while True:
 			count += 1
-			chunk = field_item.file.read(500000)
+			chunk = field_item.file.read(25000)
 			if not chunk:
 				break
 			file.write(chunk)

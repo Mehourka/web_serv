@@ -9,7 +9,7 @@
 #include "../includes/HttpHandler.hpp"
 #include <poll.h>
 
-#define BUFFER_SIZE 512
+#define BUFFER_SIZE 51200
 
 class HttpHandler;
 
@@ -25,6 +25,8 @@ class WebClient: public Socket {
 
 public:
 	WebClient(int accepted_connection, HttpHandler *httpHandler, struct pollfd *pollFd);
+	WebClient(WebClient const &other);
+	WebClient& operator=(WebClient const &other);
 	~WebClient();
 
 	HttpRequest getRequest() { return _request; };
@@ -46,6 +48,7 @@ private:
 	CgiHandler			*_cgi;
 	std::vector<char>	_writeBuffer;
 	std::time_t			_last_update;
+	void				_deleteCGI();
 
 
 	void	_processInput();

@@ -6,7 +6,7 @@
 /*   By: kmehour <kmehour@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/08 18:56:37 by oroy              #+#    #+#             */
-/*   Updated: 2024/10/08 17:46:36 by kmehour          ###   ########.fr       */
+/*   Updated: 2024/10/23 16:23:03 by kmehour          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,10 +23,9 @@
 
 class Socket
 {
-private:
-	Socket() {};
 
 protected:
+	Socket() {};
 	Socket(int socket_fd);
 	Socket(std::string const host, unsigned int const port);
 	Socket(Socket const &);

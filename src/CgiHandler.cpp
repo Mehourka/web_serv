@@ -172,7 +172,7 @@ void	CgiHandler::run()
 	if (_state == SENDING_TO_SCRIPT)
 	{
 		// write chunk
-		unsigned long chunk_size = 500000;
+		unsigned long chunk_size = 25000;
 		if(_sent_bytes >= _request.getContentLength())
 		{
 			close(_parent_to_child[1]);
@@ -189,7 +189,7 @@ void	CgiHandler::run()
 	if (_state == READING_FROM_SCRIPT)
 	{
 		// Read chunk
-		#define BUFFERSIZE 255
+		#define BUFFERSIZE 25000
 		char buffer[BUFFERSIZE];
 		bzero(buffer, BUFFERSIZE);
 		int bytes_read;
