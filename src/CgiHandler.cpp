@@ -10,7 +10,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
-#define TIMEOUT 12
+#define TIMEOUT 3
 
 CgiHandler::CgiHandler(HttpRequest const &request, std::string const &cgi_bin)
 	: _request(request), _htmlRoot("./data/www"), _cgi_bin(cgi_bin)
@@ -99,6 +99,7 @@ bool CgiHandler::_spawn_process() {
 
 	std::stringstream			content_length;
 	content_length << "CONTENT_LENGTH=" << _request.body().size();
+	_exec_start = std::time(NULL);
 
 
 	pipe(_child_to_parent);
@@ -147,13 +148,13 @@ void	CgiHandler::run()
 	}
 
 	// Check time-out
-	// if (_timeout_cgi(_process_id, wstatus, TIMEOUT))
-	// {
-	// 	kill(_process_id, 9);
-	// 	_cgiResponse = "<h1>[CGI] Script timed out!</h1>";
-	// 	_state = COMPLETE;
-	// 	return;
-	// }
+	if (_timeout_cgi(_process_id, wstatus, TIMEOUT))
+	{
+		kill(_process_id, 9);
+		_cgiResponse = "<h1>[CGI] Script timed out!</h1>";
+		_state = TIMED_OUT;
+		return;
+	}
 
 	if (WIFEXITED(wstatus) && WEXITSTATUS(wstatus) != 0)
 	{
@@ -211,25 +212,12 @@ void	CgiHandler::run()
 
 bool CgiHandler::_timeout_cgi(int _process_id, int &wstatus, int timeout_sec)
 {
-	std::time_t begin = std::time(NULL);
-
-	printMsg(B, "CGI: [Timing for ] %d", timeout_sec);
-	while (true)
-	{
-		waitpid(_process_id, &wstatus, WNOHANG);
-		if (WIFEXITED(wstatus))
-		{
-			printMsg(B, "CGI: Child process finished");
-			printMsg(B, "CGI: Elapsed time: %d", seconds_since(begin));
-			return false;
-		}
-
-		if (seconds_since(begin) > timeout_sec * 1000)
-		{
-			printMsg(B, "CGI: Cgi-handler [TIMEOUT]");
-			return true;
-		}
-		usleep(50000);
+	// printMsg(B, "CGI: [Timing for ] %d", timeout_sec);
+	// printMsg(B, "CGI: Elapsed time: %d", seconds_since(_exec_start));
+	waitpid(_process_id, &wstatus, WNOHANG);
+	if (seconds_since(_exec_start) > timeout_sec) {
+		printMsg(B, "CGI: Cgi-handler [TIMEOUT]");
+		return true;
 	}
 	return false;
 }

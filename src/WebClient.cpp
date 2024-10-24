@@ -24,7 +24,6 @@ void	WebClient::_deleteCGI()
 {
 	if (_cgi)
 	{
-		printMsg(R, "Deleting _cgi 0x%p", _cgi);
 		delete _cgi;
 		_cgi = NULL;
 	}

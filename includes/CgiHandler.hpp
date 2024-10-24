@@ -33,6 +33,7 @@ private:
 	int					_child_to_parent[2], _parent_to_child[2];
 	int					_sent_bytes;
 	pid_t				_process_id;
+	std::time_t			_exec_start;
 
 public:
 	std::string			_cgiResponse;
