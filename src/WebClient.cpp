@@ -1,4 +1,7 @@
 #include "../includes/WebClient.hpp"
+#include "../includes/utils.hpp"
+#include <istream>
+#include <sstream>
 #include <sys/socket.h>
 
 WebClient::WebClient(int accepted_connection, HttpHandler* httpHandler, pollfd *pollFd_ptr)
@@ -7,6 +10,7 @@ WebClient::WebClient(int accepted_connection, HttpHandler* httpHandler, pollfd *
 	
 {
 	_cgi = NULL;
+	_sentBytes = 0;
 	setPollFd(pollFd_ptr);
 	_updateTime();
 }
@@ -39,20 +43,26 @@ WebClient& WebClient::operator = (WebClient const &other) {
 	_cgi = other._cgi;
 	_writeBuffer = other._writeBuffer;
 	_last_update = other._last_update;
+	_sentBytes = other._sentBytes;
 
 	return *this;
 }
 
 void WebClient::_sendData(char const *data, size_t data_len) {
 	size_t	rtn = 0;
-	size_t	idx = 0;
-	size_t	chunk_size = 255;
-	// size_t	send_size = 0;
+	size_t chunk_size = 0;
+	size_t max_chunk_size = 65536;
 
-	while (idx < data_len)
-	{
-		rtn = send(_socketFD, data + idx, chunk_size, 0);
-		idx += rtn;
+
+	if (_sentBytes < data_len) {
+		chunk_size = ::min(max_chunk_size, data_len - _sentBytes);
+		rtn = send(_socketFD, data + _sentBytes, chunk_size, 0);
+		printMsg(G, "DEBUG: rtn %d", rtn);
+		_sentBytes += rtn;
+	}
+
+	if (_sentBytes >= data_len) {
+		_state = COMPLETE;
 	}
 }
 
@@ -105,6 +115,37 @@ void WebClient::_handleRequest(){
 		_state=SENDING_RESPONSE;
 }
 
+std::string WebClient::_printStatus() const{
+	std::ostringstream oss;
+	std::string state;
+
+	switch (_state) {
+		case READING:
+			state = "reading request";
+			break;
+		case HANDLING_REQUEST:
+			state = "Handling request";
+			break;
+		case HANDLING_CGI:
+			state = "Handling CGI";
+			break;
+		case SENDING_RESPONSE:
+			state = "Writing to client";
+			break;
+		case COMPLETE:
+			state = "Completed!!!";
+			break;
+		default:
+			state= "[DEFAULT]";
+			break;
+	}
+
+	oss << "[WebClient] target: " << _request.target()
+		<< "\nStatus: " << state
+		<< std::endl;
+	return oss.str();
+}
+
 bool WebClient::process()
 {
 	switch (_state) {
@@ -119,17 +160,16 @@ bool WebClient::process()
 			return false;
 		case SENDING_RESPONSE:
 			_sendData(_response.getResponse().data(), _response.getResponse().size());
-			_state = COMPLETE;
 			break;
 		case COMPLETE:
 			std::cout << "[UNIMPLEMENTED] Web Client COMPLETE" << std::endl;
 			break;
 		case ERROR:
-			std::cout << "[UNIMPLEMENTED] Web Client ERROR" << std::endl;
+			std::cout << "[UNIMPLEMENTED] Web Clnent ERROR" << std::endl;
 			return false;
 	}
 
-
+	printMsg(G, "%s", _printStatus().c_str());
 
 	return !(_state == COMPLETE);
 }

@@ -10,7 +10,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
-#define TIMEOUT 3
+#define TIMEOUT 300
 
 CgiHandler::CgiHandler(HttpRequest const &request, std::string const &cgi_bin)
 	: _request(request), _htmlRoot("./data/www"), _cgi_bin(cgi_bin)
@@ -23,6 +23,7 @@ CgiHandler::CgiHandler(HttpRequest const &request, std::string const &cgi_bin)
 	_is_valid = false;
 	_state = COLD;
 	_sent_bytes = 0;
+	_request_body = _request.body();
 
 	_init();
 }
@@ -33,16 +34,19 @@ void CgiHandler::_init() {
 
 	if (_cgi_bin.back() != '/')
 		_cgi_bin += "/";
+
 	size_t	it = target.find(_cgi_bin);
 
-	if (it != 0) {
+	if (it == 0) {
+		it = target.find_first_of("/?", _cgi_bin.size());
+		_scriptName = target.substr(0, it);
+	}
+	else if (target.find(".bla") != std::string::npos)
+		_scriptName = "/cgi-bin/cgi_tester";
+	else {
 		return;
 	}
 
-	it = target.find_first_of("/?", _cgi_bin.size());
-	_scriptName = target.substr(0, it);
-	// if (target.find(".bla") != std::string::npos)
-	// 	script_name = "/cgi-bin/cgi_tester";
 	_scriptPath = _htmlRoot + _scriptName;
 
 	if (access(_scriptPath.data(), X_OK) != 0) {
@@ -77,6 +81,7 @@ void CgiHandler::_setEnvp() {
 	_add_env_var("FILENAME", "/data/www/upload/test.txt");
 	_add_env_var("UPLOAD_DIR", "./data/www/upload2");
 	_add_env_var("CONTENT_TYPE", _request.getHeader("content-type"));
+	_add_env_var("SERVER_PROTOCOL", "HTTP/1.1");
 	_envp.push_back(NULL);
 
 }
@@ -106,7 +111,10 @@ bool CgiHandler::_spawn_process() {
 	pipe(_parent_to_child);
 
 	// Set pipe to non-blocking
-	fcntl(_child_to_parent[0], F_SETFL, fcntl(_child_to_parent[0], F_GETFL) | O_NONBLOCK);
+	fcntl(_child_to_parent[0], F_SETFL,  O_NONBLOCK);
+	fcntl(_child_to_parent[1], F_SETFL,  O_NONBLOCK);
+	fcntl(_parent_to_child[0], F_SETFL,  O_NONBLOCK);
+	fcntl(_parent_to_child[1], F_SETFL, O_NONBLOCK);
 
 	_process_id = fork();
 	if (_process_id < 0)
@@ -173,24 +181,25 @@ void	CgiHandler::run()
 	if (_state == SENDING_TO_SCRIPT)
 	{
 		// write chunk
-		unsigned long chunk_size = 25000;
+		unsigned long chunk_size = 65536;
 		if(_sent_bytes >= _request.getContentLength())
 		{
 			close(_parent_to_child[1]);
 			_state = READING_FROM_SCRIPT;
 		}
 		else {
-			chunk_size = ::min(chunk_size, _request.body().size() - _sent_bytes);
-			write(_parent_to_child[1], _request.body().data() + _sent_bytes, chunk_size);
+			chunk_size = ::min(chunk_size, _request_body.size() - _sent_bytes);
+			write(_parent_to_child[1], _request_body.data() + _sent_bytes, chunk_size);
 			_sent_bytes += chunk_size;
 		}
+		printMsg(G, "[CGI] %d  sent to script", chunk_size);
 		return;
 	}
 
 	if (_state == READING_FROM_SCRIPT)
 	{
 		// Read chunk
-		#define BUFFERSIZE 25000
+		#define BUFFERSIZE 65536
 		char buffer[BUFFERSIZE];
 		bzero(buffer, BUFFERSIZE);
 		int bytes_read;

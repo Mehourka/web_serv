@@ -191,6 +191,9 @@ void HttpRequest::_parse_body()
 		return;
 	}
 
+    if (_body.capacity() < static_cast<size_t>(_contentLength)) {
+        _body.reserve(_contentLength);
+    }
 	read_bytes = ::min(_buffer.size(), _contentLength - _body.size());
 	_body.insert(_body.end(), _buffer.begin(), _buffer.begin() + read_bytes);
 	_buffer.clear();

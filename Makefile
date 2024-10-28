@@ -6,7 +6,7 @@
 #    By: kmehour <kmehour@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/01/11 12:46:32 by zvan-de-          #+#    #+#              #
-#    Updated: 2024/10/08 17:44:50 by kmehour          ###   ########.fr        #
+#    Updated: 2024/10/23 20:15:11 by kmehour          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -117,7 +117,10 @@ fclean: clean
 
 re: fclean all
 
-.PHONY:		all clean fclean re explain
+tester: all
+	./tester http://localhost:8001
+
+.PHONY:		all clean fclean re explain tester test
 
 #------------------------------------------------------------------------------#
 #                                 VALGRIND                                     #

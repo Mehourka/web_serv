@@ -7,6 +7,7 @@
 #include "HttpRequest.hpp"
 #include "../includes/CgiHandler.hpp"
 #include "../includes/HttpHandler.hpp"
+#include "../includes/utils.hpp"
 #include <poll.h>
 
 #define BUFFER_SIZE 51200
@@ -47,12 +48,15 @@ private:
 	HttpHandler			*_httpHandler;
 	CgiHandler			*_cgi;
 	std::vector<char>	_writeBuffer;
+	unsigned long 		_sentBytes;
 	std::time_t			_last_update;
 	void				_deleteCGI();
 
 
 	void	_processInput();
 	void	_processCGI();
+
+	std::string _printStatus() const;
 
 	WebClient();
 };
