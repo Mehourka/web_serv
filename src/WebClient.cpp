@@ -57,7 +57,6 @@ void WebClient::_sendData(char const *data, size_t data_len) {
 	if (_sentBytes < data_len) {
 		chunk_size = ::min(max_chunk_size, data_len - _sentBytes);
 		rtn = send(_socketFD, data + _sentBytes, chunk_size, 0);
-		printMsg(G, "DEBUG: rtn %d", rtn);
 		_sentBytes += rtn;
 	}
 

@@ -11,6 +11,7 @@
 #include <fcntl.h>
 
 #define TIMEOUT 300
+#define BUFFER_SIZE 65536
 
 CgiHandler::CgiHandler(HttpRequest const &request, std::string const &cgi_bin)
 	: _request(request), _htmlRoot("./data/www"), _cgi_bin(cgi_bin)
@@ -111,10 +112,10 @@ bool CgiHandler::_spawn_process() {
 	pipe(_parent_to_child);
 
 	// Set pipe to non-blocking
-	fcntl(_child_to_parent[0], F_SETFL,  O_NONBLOCK);
-	fcntl(_child_to_parent[1], F_SETFL,  O_NONBLOCK);
-	fcntl(_parent_to_child[0], F_SETFL,  O_NONBLOCK);
-	fcntl(_parent_to_child[1], F_SETFL, O_NONBLOCK);
+	// fcntl(_child_to_parent[0], F_SETFL,  O_NONBLOCK);
+	// fcntl(_child_to_parent[1], F_SETFL,  O_NONBLOCK);
+	// fcntl(_parent_to_child[0], F_SETFL,  O_NONBLOCK);
+	// fcntl(_parent_to_child[1], F_SETFL, O_NONBLOCK);
 
 	_process_id = fork();
 	if (_process_id < 0)
@@ -181,7 +182,7 @@ void	CgiHandler::run()
 	if (_state == SENDING_TO_SCRIPT)
 	{
 		// write chunk
-		unsigned long chunk_size = 65536;
+		unsigned long chunk_size = BUFFER_SIZE;
 		if(_sent_bytes >= _request.getContentLength())
 		{
 			close(_parent_to_child[1]);
@@ -199,12 +200,11 @@ void	CgiHandler::run()
 	if (_state == READING_FROM_SCRIPT)
 	{
 		// Read chunk
-		#define BUFFERSIZE 65536
-		char buffer[BUFFERSIZE];
-		bzero(buffer, BUFFERSIZE);
+		char buffer[BUFFER_SIZE];
+		bzero(buffer, BUFFER_SIZE);
 		int bytes_read;
 
-		bytes_read = read (_child_to_parent[0], buffer, BUFFERSIZE);
+		bytes_read = read (_child_to_parent[0], buffer, BUFFER_SIZE);
 		// printMsg(G, "CGI: bytes_read(%i) buffer: %s", bytes_read, buffer);
 		if (bytes_read > 0)
 		{
