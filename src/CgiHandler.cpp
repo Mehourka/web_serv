@@ -29,6 +29,13 @@ CgiHandler::CgiHandler(HttpRequest const &request, std::string const &cgi_bin)
 	_init();
 }
 
+CgiHandler::~CgiHandler() {
+	close(_parent_to_child[0]);
+	close(_parent_to_child[1]);
+	close(_child_to_parent[0]);
+	close(_child_to_parent[1]);
+}
+
 void CgiHandler::_init() {
 
 	const std::string target = _request.target();
@@ -154,6 +161,7 @@ void	CgiHandler::run()
 		if (_request.getContentLength() > 0) {
 			_state = SENDING_TO_SCRIPT;
 		} else {
+			close(_parent_to_child[1]);
 			_state = READING_FROM_SCRIPT;
 		}
 	}
@@ -164,6 +172,8 @@ void	CgiHandler::run()
 		kill(_process_id, 9);
 		_cgiResponse = "<h1>[CGI] Script timed out!</h1>";
 		_state = TIMED_OUT;
+		close(_parent_to_child[1]);
+		close(_child_to_parent[0]);
 		return;
 	}
 
@@ -178,6 +188,8 @@ void	CgiHandler::run()
 
 		_cgiResponse = "<h1>[DEBUG] Error in executing CGI script</h1>\r\n";
 		_state = COMPLETE;
+		close(_parent_to_child[1]);
+		close(_child_to_parent[0]);
 		return;
 	}
 
@@ -215,7 +227,10 @@ void	CgiHandler::run()
 		}
 
 		if (bytes_read == 0 && _cgiResponse.size() > 0)
+		{
+			close(_child_to_parent[0]);
 			_state = COMPLETE;
+		}
 	}
 	// If the handler is marked as complete, web client reads the _cgiResponse, and sends it
 	// TODO [Optional]: make the webclient send data as it comes, with chunked transfer.

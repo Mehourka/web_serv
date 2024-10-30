@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpHandler.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kmehour <kmehour@student.42.fr>            +#+  +:+       +#+        */
+/*   By: oroy <oroy@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 12:09:00 by oroy              #+#    #+#             */
-/*   Updated: 2024/10/18 15:06:46 by kmehour          ###   ########.fr       */
+/*   Updated: 2024/10/30 14:47:22 by oroy             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,6 +67,8 @@ private:
 	void								_populateResponse(HttpRequest const &request);
 
 	std::string const					_autoIndexGenerator(std::string & path, std::string const & target);
+	void								_generateError();
+
 
 public:
 

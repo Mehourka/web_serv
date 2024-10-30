@@ -3,17 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   HttpHandler.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kmehour <kmehour@student.42.fr>            +#+  +:+       +#+        */
+/*   By: oroy <oroy@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 12:30:55 by oroy              #+#    #+#             */
-/*   Updated: 2024/10/28 16:10:02 by kmehour          ###   ########.fr       */
+/*   Updated: 2024/10/30 15:02:40 by oroy             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/HttpHandler.hpp"
 #include "../includes/CgiHandler.hpp"
 
-HttpHandler::HttpHandler(Config &conf) : _conf(conf), _baseDir("./data"), _content("") {}
+HttpHandler::HttpHandler(Config &conf) : _conf(conf), _config(NULL), _baseDir("./data"), _content("") {}
 
 HttpHandler::~HttpHandler() {}
 
@@ -31,10 +31,15 @@ void	HttpHandler::_setRequestParameters(HttpRequest const &request)
 
 void	HttpHandler::buildResponse(HttpRequest const &request, HttpResponse &response)
 {
+	_response = &response;
+	if (!request.isComplete())	{
+		_generateError();
+		return;
+	}
+	
 	try {
 		ConfigServer config = _conf.getServerConfig(request.getHeader("host"), request.target());
 		_config = &config;
-		_response = &response;
 		_cgi_bin = config.getCGIbin();
 		
 		_conf.printMsg(B, "Server[%s]: request recieved [Method[%s] Target[%s] Version[%s]]", _config->getServerName().c_str(), request.method().c_str(), request.target().c_str(), request.version().c_str());
@@ -56,6 +61,8 @@ void	HttpHandler::buildResponse(HttpRequest const &request, HttpResponse &respon
 		_populateResponse(request);
 	}
 	catch (exception &e){
+
+		_populateResponse(request);
 		cerr << "webserv: " << R << "ERROR" << END << "[" << e.what() << "]" << endl;
 	}
 }
@@ -130,14 +137,27 @@ void	HttpHandler::_server_msg(){
 
 void	HttpHandler::_populateResponse(HttpRequest const &request)
 {
-	_response->setConfig(_config);
-	_response->setContent(_content);
-	_response->setHeader("Allow", _response->getAllowedMethods());
-	_response->setHeader("Content-Length", std::to_string(_content.size()));
-	_response->setHeader("Content-Type", _contentType);
-	_response->setHeader("Date", _conf.getCurrTime());
-	_response->setStatusCode(_statusCode);
-	_response->setVersion(request.version());
+	if (_config)
+	{
+		_response->setConfig(_config);
+		_response->setContent(_content);
+		_response->setHeader("Allow", _response->getAllowedMethods());
+		_response->setHeader("Content-Length", std::to_string(_content.size()));
+		_response->setHeader("Content-Type", _contentType);
+		_response->setHeader("Date", _conf.getCurrTime());
+		_response->setStatusCode(_statusCode);
+		_response->setVersion(request.version());
+	} else {
+		_generateError();
+	}
+}
+
+void HttpHandler::_generateError() {
+		_response->setContent(_response->getDefaultContent(404));
+		_response->setHeader("Content-Length", std::to_string(_response->getContent().size()));
+		_response->setHeader("Content-Type", "text/html");
+		_response->setStatusCode(404);
+		_response->setVersion("HTTP/1.1");
 }
 
 std::string	HttpHandler::_getPage(short const & errorCode)
