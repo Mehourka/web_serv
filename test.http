@@ -1,3 +1,0 @@
-GET http://127.0.0.1:8001/cgi-bin/cgi_info.php HTTP/1.1
-
-# GET http://127.0.0.1:8001/cgi-bin/index.html HTTP/1.1

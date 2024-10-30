@@ -29,13 +29,6 @@ CgiHandler::CgiHandler(HttpRequest const &request, std::string const &cgi_bin)
 	_init();
 }
 
-CgiHandler::~CgiHandler() {
-	close(_parent_to_child[0]);
-	close(_parent_to_child[1]);
-	close(_child_to_parent[0]);
-	close(_child_to_parent[1]);
-}
-
 void CgiHandler::_init() {
 
 	const std::string target = _request.target();
@@ -228,6 +221,7 @@ void	CgiHandler::run()
 
 		if (bytes_read == 0 && _cgiResponse.size() > 0)
 		{
+			close(_parent_to_child[1]);
 			close(_child_to_parent[0]);
 			_state = COMPLETE;
 		}
