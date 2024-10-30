@@ -41,6 +41,8 @@ void CgiHandler::_init() {
 	if (it == 0) {
 		it = target.find_first_of("/?", _cgi_bin.size());
 		_scriptName = target.substr(0, it);
+		if (_scriptName == _cgi_bin)
+			return;
 	}
 	else if (target.find(".bla") != std::string::npos)
 		_scriptName = "/cgi-bin/cgi_tester";
