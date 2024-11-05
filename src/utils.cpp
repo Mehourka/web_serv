@@ -2,6 +2,7 @@
 #include <cctype>
 #include <iomanip>
 #include <iostream>
+#include <cstdarg>
 
 // ========== ========== String Utils ========== ==========
 // trim from end of string (right)
@@ -133,7 +134,7 @@ void  printMsg(const char *color, const char* msg, ...)
 	va_start(args, msg);
 	n = vsnprintf(output, 8192, msg, args);
 	std::string date = getCurrTime();
-	std::cout << color << getCurrTime() << output << END << std::endl;   
+	std::cout << color << getCurrTime() << output << END << std::endl;
 	va_end(args);
 	(void)n;
 }

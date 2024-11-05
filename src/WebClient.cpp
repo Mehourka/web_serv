@@ -5,9 +5,9 @@
 #include <sys/socket.h>
 
 WebClient::WebClient(int accepted_connection, HttpHandler* httpHandler, pollfd *pollFd_ptr)
-	: Socket(accepted_connection), _pollFd(pollFd_ptr), 
+	: Socket(accepted_connection), _pollFd(pollFd_ptr),
 	_state(READING), _httpHandler(httpHandler)
-	
+
 {
 	_cgi = NULL;
 	_sentBytes = 0;
@@ -54,15 +54,17 @@ void WebClient::_sendData(char const *data, size_t data_len) {
 	size_t max_chunk_size = 65536;
 
 
-	if (_sentBytes < data_len) {
-		chunk_size = ::min(max_chunk_size, data_len - _sentBytes);
-		rtn = send(_socketFD, data + _sentBytes, chunk_size, 0);
-		_sentBytes += rtn;
-	}
-
 	if (_sentBytes >= data_len) {
 		_state = COMPLETE;
+		return;
 	}
+
+	chunk_size = ::min(max_chunk_size, data_len - _sentBytes);
+	rtn = send(_socketFD, data + _sentBytes, chunk_size, 0);
+	if (rtn <= 0) {
+		return;
+	}
+	_sentBytes += rtn;
 }
 
 
@@ -74,11 +76,12 @@ void WebClient::_processInput()
 	if (_pollFd->revents & POLLIN)
 	{
 		bytes_read = recv(_socketFD, buffer, BUFFER_SIZE, 0);
-		if (bytes_read <= 0)
-		{
+		if (bytes_read == 0) {
 			_state = HANDLING_REQUEST;
 			return ;
 		}
+		if (bytes_read < 0)
+			return;
 	}
 
 	// Parse the request
@@ -89,7 +92,7 @@ void WebClient::_processInput()
 }
 
 void WebClient::_processCGI() {
-	
+
 	// Init cgi execution
 	if (_cgi == NULL)
 	{
@@ -103,9 +106,8 @@ void WebClient::_processCGI() {
 		_deleteCGI();
 		_state = SENDING_RESPONSE;
 	}
-
-
 }
+
 void WebClient::_handleRequest(){
 	_httpHandler->buildResponse(_request, _response);
 	if(_httpHandler->checkCgi(_request))

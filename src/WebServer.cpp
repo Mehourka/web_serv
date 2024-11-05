@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <ios>
 #include <type_traits>
+#include <cstring>
 
 WebServer::WebServer(std::vector<TcpListener> socketList, Config &conf) : _nfds(0), \
 _listeners_list(socketList), _config(conf), _httpHandler(conf)
@@ -111,7 +112,7 @@ void	WebServer::_processClients()
 
 	for (client_it = _clients_list.begin(); client_it < _clients_list.end(); ++client_it)
 	{
-		if (client_it->isComplete() 
+		if (client_it->isComplete()
 			|| client_it->getTime() > CLIENT_TIMEOUT)
 		{
 			_removeClient(&(*client_it));

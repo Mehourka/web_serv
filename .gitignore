@@ -3,4 +3,5 @@ tests.dSYM/
 objs/
 *.dSYM/
 webserv
-data/www/upload/*
+data/www/upload*/*
+compile_commands.json

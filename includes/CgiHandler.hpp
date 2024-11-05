@@ -48,13 +48,17 @@ private:
 	void	_send_to_cgi(std::string &src, size_t n_bytes);
 	void	_read_from_cgi(std::string &dst, size_t n_bytes);
 	bool	_timeout_cgi(int process_id, int &wstatus, int timeout_sec);
+	bool	_cgi_returned_error(int &status);
 	void	_add_env_var(std::string key, std::string value);
 	void	_setEnvp();
 	bool	_spawn_process();
+	void	_send_to_cgi();
+	void	_recv_from_cgi();
+
 public:
 	CgiHandler(HttpRequest const &request, std::string const &cgi_bin);
 
-	bool	isValid() const; 
+	bool	isValid() const;
 	bool	completed() const;
 	void	run();
 	std::string getContent() const { return _cgiResponse; };
